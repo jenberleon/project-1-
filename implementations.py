@@ -234,7 +234,7 @@ def reg_logistic_regression(
         gradient = compute_logistic_gradient(y, tx, w)
 
         # Add regularization gradient
-        gradient += lambda_ * w
+        gradient += 2*lambda_ * w
 
         # Update weights
         w = w - gamma * gradient

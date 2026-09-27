@@ -15,12 +15,14 @@ from implementations import (
 
 # We have 4 observations and 2 features.
 # The first column is the intercept (all 1s).
-tx = np.array([
-    [1.0, 1.0],
-    [1.0, 2.0],
-    [1.0, 3.0],
-    [1.0, 4.0],
-])
+tx = np.array(
+    [
+        [1.0, 1.0],
+        [1.0, 2.0],
+        [1.0, 3.0],
+        [1.0, 4.0],
+    ]
+)
 
 # Target values for linear regression
 y = np.array([2.0, 4.0, 6.0, 8.0])

@@ -123,7 +123,7 @@ def ridge_regression(y, tx, lambda_):
 
     # Compute:
     # X^T X + N * lambda * I
-    A = tx.T @ tx + n * lambda_ * np.eye(d)
+    A = tx.T @ tx + 2*n * lambda_ * np.eye(d)
 
     # Compute X^T y
     b = tx.T @ y

@@ -1,5 +1,4 @@
 import numpy as np
-
 from implementations import (
     mean_squared_error_gd,
     mean_squared_error_sgd,

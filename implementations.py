@@ -4,7 +4,7 @@ import numpy as np
 def compute_mse(y, tx, w):
     """Compute mean squared error with a factor 0.5."""
     error = y - tx @ w
-    return 0.5 * np.mean(error ** 2)
+    return 0.5 * np.mean(error**2)
 
 
 def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
@@ -123,7 +123,7 @@ def ridge_regression(y, tx, lambda_):
 
     # Compute:
     # X^T X + N * lambda * I
-    A = tx.T @ tx + 2*n * lambda_ * np.eye(d)
+    A = tx.T @ tx + 2 * n * lambda_ * np.eye(d)
 
     # Compute X^T y
     b = tx.T @ y
@@ -164,10 +164,7 @@ def compute_logistic_loss(y, tx, w):
     pred = np.clip(pred, eps, 1 - eps)
 
     # Binary cross-entropy loss
-    loss = -np.mean(
-        y * np.log(pred)
-        + (1 - y) * np.log(1 - pred)
-    )
+    loss = -np.mean(y * np.log(pred) + (1 - y) * np.log(1 - pred))
 
     return loss
 
@@ -209,14 +206,7 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma):
     return w, loss
 
 
-def reg_logistic_regression(
-    y,
-    tx,
-    lambda_,
-    initial_w,
-    max_iters,
-    gamma
-):
+def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
     """
     Regularized logistic regression using gradient descent.
 
@@ -234,7 +224,7 @@ def reg_logistic_regression(
         gradient = compute_logistic_gradient(y, tx, w)
 
         # Add regularization gradient
-        gradient += 2*lambda_ * w
+        gradient += 2 * lambda_ * w
 
         # Update weights
         w = w - gamma * gradient

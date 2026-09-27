@@ -1,4 +1,3 @@
-```python
 import numpy as np
 
 from implementations import (
@@ -144,5 +143,4 @@ print("Regularized Logistic Regression")
 print("Weights:", w)
 print("Loss:", loss)
 print()
-```
 

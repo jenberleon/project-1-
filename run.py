@@ -143,4 +143,3 @@ print("Regularized Logistic Regression")
 print("Weights:", w)
 print("Loss:", loss)
 print()
-

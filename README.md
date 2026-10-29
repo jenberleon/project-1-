@@ -26,19 +26,6 @@ Times measured on a 13-inch MacBook Air.
 **Competition test set (AIcrowd):** our submission (boosted trees) reaches
 **F1 = 0.454** and **accuracy = 0.874**.
 
-## Setup
-
-Put the three data files from the AIcrowd competition in a folder `dataset/`
-next to the code, without renaming them:
-
-```
-dataset/x_train.csv
-dataset/y_train.csv
-dataset/x_test.csv
-```
-
-The first run reads the CSVs (a few minutes) and saves a fast cache
-`dataset/cache.npz`, which later runs reuse.
 
 ## How to run
 

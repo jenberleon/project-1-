@@ -36,14 +36,41 @@ project-1-/
 └── dataset/                    Data files (not tracked, see below)
 ```
 
-## Requirements
+## Environment
 
-The code only uses Python, NumPy and Matplotlib (for the figures). The easiest way to get the right versions is the course environment:
+The code only uses Python, NumPy and Matplotlib (for the figures). All scripts and tests should be run in the course environment, which is defined in `grading_tests/environment.yml`. It installs the same versions the graders use (Python 3.9), together with `pytest` and the `black` code formatter used by the grading tests. This requires conda (Anaconda or Miniconda).
+
+### Create the environment (only once)
+
+From the main project folder:
 
 ```bash
-cd grading_tests
-conda env create --file=environment.yml --name=project1-grading
+conda env create --file=grading_tests/environment.yml --name=project1-grading
+```
+
+This takes a few minutes, since it downloads all packages.
+
+### Activate the environment (every new terminal)
+
+```bash
 conda activate project1-grading
+```
+
+The terminal prompt then starts with `(project1-grading)` instead of `(base)`. The environment has to be activated again in every new terminal window before running the code or the tests.
+
+### Useful commands
+
+```bash
+conda env list          # show all environments; the active one is marked with *
+conda deactivate        # leave the environment and return to (base)
+```
+
+### Code formatting
+
+The code is formatted with `black`, which is included in the environment. After editing any Python file, format the code again from the main project folder:
+
+```bash
+black run.py implementations.py src experiments
 ```
 
 ## Data
@@ -139,19 +166,3 @@ The boosting hyperparameters in `src/boosting.py` were chosen by random search o
 
 It reached a cross-validated F1 of 0.4385 ± 0.0017, compared to 0.4344 for our initial settings. The best configurations scored within about 0.002 of each other, which is below the variation between folds. In all trials, the validation F1 peaked between about 75 and 125 trees while the training loss kept decreasing, a sign of overfitting beyond that point. The number of trees is therefore not fixed: `boosting.py` selects it by cross-validation, up to a maximum of 250.
 
-## Running the grading tests
-
-The `grading_tests/` folder contains the public tests provided by the course to check the functions in `implementations.py`. After creating and activating the environment (see Requirements), run:
-
-```bash
-cd grading_tests
-pytest --github_link https://github.com/jenberleon/project-1-/tree/$(git rev-parse HEAD) .
-```
-
-The tests require a link to a specific commit, not just to the repository. The command above builds it automatically from the latest local commit, so make sure all changes are pushed with `git push` before running it. The link can also be found in the browser: open the repository page on GitHub and press the `y` key.
-
-To test the local code without pushing, use:
-
-```bash
-pytest --github_link .. .
-```

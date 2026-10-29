@@ -1,3 +1,5 @@
+"""Some helper functions for project 1."""
+
 import csv
 import numpy as np
 import os

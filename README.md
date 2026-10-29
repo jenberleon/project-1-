@@ -54,49 +54,4 @@ Times measured on a 13-inch MacBook Air.
 | `make_figures.py` | Figures and LaTeX table |
 | `run.py` | Reproduces the submission |
 
-## Data preparation
 
-BRFSS stores non-answers as numeric codes (see the
-[codebook](https://www.cdc.gov/brfss/annual_data/2015/pdf/codebook15_llcp.pdf)):
-7/77 = "don't know", 9/99 = "refused", 88 = "none", BLANK = "not asked or missing".
-"Refused" and "don't know" carry no information about the true value and would be
-read as real amounts (e.g. 99 days of poor health out of 30), so we turn them into
-missing values. They are detected automatically from each column's maximum; this is
-a heuristic that fits most questions but not all (for example, in `EMPLOY1`
-the value 7 means "retired").
-
-For the linear models, we then drop columns with more than 80% missing values,
-fill the remaining gaps with the column median, standardize, drop constant columns
-and add a bias (200 features). All statistics are computed on the training folds
-only. The ablation tests three optional steps: "none" codes set to 0, missing
-indicators, and one-hot encoding. Details are in the docstring of `preprocessing.py`.
-
-## Why we moved from linear models to trees
-
-Among linear models, the loss mattered most (logistic beats ridge by +0.0065 F1),
-while regularization did not help and feature engineering added at most +0.003
-(one-hot encoding). Missing indicators added only +0.0004, so missing values do
-not seem to be the main limit.
-
-This suggests that the linear form itself may limit performance. A linear model
-computes `w1*x1 + w2*x2 + ...`: each feature has one fixed weight, so
-
-- it cannot capture **curves**: age contributes along a straight line, while risk
-  may rise slowly and then quickly. Capturing this requires adding features such
-  as age² or age groups by hand;
-- it cannot capture **interactions**: smoking adds the same amount at every age,
-  while being old *and* a smoker may be riskier than the sum of both effects.
-  Capturing this requires adding product features such as age × smoker by hand.
-
-Decision trees can learn both on their own (several splits on age give a curve;
-a split on age followed by a split on smoking gives an interaction). Boosted trees
-gain +0.015 F1 over the best linear model without any feature engineering, which
-is consistent with this explanation. We did not test which of the two effects
-matters most; training boosting with depth 1 (curves only, no interactions) and
-comparing it to depth 5 would answer this. The same explanation is in the docstring of `boosting.py`.
-
-## Use of AI tools
-
-Claude (Anthropic) helped with grammar, wording and drafting parts of the report
-and of the experiment and plotting scripts. We ran all experiments and checked all
-code, results and text.

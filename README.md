@@ -1,57 +1,96 @@
-# EPFL CS-433 Project 1: Predicting Coronary Heart Disease (MICHD)
+# Project 1 – Machine Learning (CS-433)
 
-Mahmoud Y. Boukouis, Zakarias Hofstetter, Jeniffer P. Bermudez
+This repository contains our code for Project 1 of the Machine Learning course at EPFL. It includes our implementations of the six required ML methods, the data preprocessing pipeline, our experiments, and the script that produces our final submission.
 
-We predict whether a person has coronary heart disease (MICHD) from 321 variables
-of the BRFSS health survey. We compare the linear methods seen in class, test
-whether feature engineering helps them, and then implement gradient-boosted
-decision trees from scratch in NumPy.
+<!-- Add a short description of the task and your best result here, e.g. the dataset, the metric, and your final score on AIcrowd. -->
 
-Only the Python standard library, NumPy and matplotlib (for figures only) are used.
-The data files are not included in this repository.
+## Team
 
-## Results (5-fold cross-validation, F1 at the best threshold)
+- Mahmoud Y. Boukouis  
+- Zakarias Hofstetter
+- Jeniffer P. Bermudez
 
-| Model | CV F1 | Time / fold |
-|---|---|---|
-| Least squares | 0.359 ± 0.103 | 14 s |
-| Ridge, λ = 1e-5 | 0.4185 ± 0.0032 | 14 s |
-| Logistic, γ = 0.5 | 0.4250 ± 0.0014 | 20 s |
-| Reg. logistic, λ = 1e-4 | 0.4250 ± 0.0016 | 19 s |
-| Reg. logistic + one-hot | 0.4282 ± 0.0010 | 19 s |
-| **Boosted trees, 200 trees** | **0.4431 ± 0.0013** | 7.7 min |
+## Repository structure
 
-Times measured on a 13-inch MacBook Air.
+```
+project-1-/
+├── implementations.py       The six required ML methods (see below)
+├── helpers.py               Helper functions (data loading, CSV submission)
+├── preprocessing.py         Data cleaning and feature processing
+├── baseline.py              Baseline models
+├── boosting.py              Boosting model
+├── boosting_parameters.py   Hyperparameters for the boosting model
+├── compare_models.py        Comparison of the different models
+├── experiments.py           Experiments and hyperparameter tuning
+├── make_figures.py          Generates the figures in figures/
+├── run.py                   Produces the final submission
+├── tuning_results.json      Results of hyperparameter tuning
+├── figures/                 Plots used in the report
+├── results/                 Saved experiment results
+├── grading_tests/           Public tests provided by the course
+└── README.md
+```
 
-**Competition test set (AIcrowd):** our submission (boosted trees) reaches
-**F1 = 0.454** and **accuracy = 0.874**.
+## Requirements
 
+The code only uses Python and NumPy (plus Matplotlib for the figures). The easiest way to get the right versions is the course environment:
 
-## How to run
+```bash
+cd grading_tests
+conda env create --file=environment.yml --name=project1-grading
+conda activate project1-grading
+```
 
-| Command | What it does | Time |
-|---|---|---|
-| `python run.py` | **Reproduces our best submission**: trains the boosted trees (200 trees, threshold 0.20) on all training data and writes `submission.csv` | ~10 min |
-| `python experiments.py` | Runs all experiments of the report (linear models, ablation, step size, boosting) and saves the numbers to `results/results.json` | ~70 min |
-| `python make_figures.py` | Makes the report figures and the results table (`results/*.pdf`, `results/table.tex`) from `results/results.json` | seconds |
-| `python experiments.py --quick` | Same as above on the first 50,000 rows, to test that everything works | ~30 min |
-| `python experiments.py --stages boosting` | Runs only some stages (`models`, `ablation`, `gamma`, `boosting`) | |
+## Data
 
-`run.py` uses fixed seeds, so it produces exactly the same `submission.csv` every time.
+Download the dataset from the course page and place the files in the `dataset/` folder. The data is not included in the repository because of its size.
 
-## Files
+## Reproducing the submission
 
-| File | Content |
+From the main project folder, run:
+
+```bash
+python run.py
+```
+
+This loads the data, applies the preprocessing, trains the final model, and writes the predictions to `submission.csv`.
+
+To regenerate the figures:
+
+```bash
+python make_figures.py
+```
+
+## Implemented methods
+
+All functions are in `implementations.py` and return `(w, loss)`, where `w` is the final weight vector and `loss` is the corresponding loss. For the regularized methods, the returned loss does not include the penalty term.
+
+| Function | Description |
 |---|---|
-| `implementations.py` | The 6 required functions: `mean_squared_error_gd`, `mean_squared_error_sgd`, `least_squares`, `ridge_regression`, `logistic_regression`, `reg_logistic_regression` |
-| `helpers.py` | Course helpers: loading the CSVs, writing the submission |
-| `preprocessing.py` | Data cleaning for the linear models (see below and the docstring at the top of the file) |
-| `baseline.py` | Shared settings (seed 42, 5 folds, threshold grid, λ, γ) and a single reg. logistic pipeline |
-| `compare_models.py` | Earlier script comparing the linear models (superseded by `experiments.py`) |
-| `README.md` | This file |
-| `boosting.py` | Gradient-boosted decision trees in pure NumPy |
-| `experiments.py` | All experiments of the report, with timing |
-| `make_figures.py` | Figures and LaTeX table |
-| `run.py` | Reproduces the submission |
+| `mean_squared_error_gd(y, tx, initial_w, max_iters, gamma)` | Linear regression using gradient descent |
+| `mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma)` | Linear regression using stochastic gradient descent (batch size 1) |
+| `least_squares(y, tx)` | Least squares using the normal equations |
+| `ridge_regression(y, tx, lambda_)` | Ridge regression using the normal equations |
+| `logistic_regression(y, tx, initial_w, max_iters, gamma)` | Logistic regression using gradient descent |
+| `reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma)` | Regularized logistic regression using gradient descent |
 
+## Running the grading tests
 
+The `grading_tests/` folder contains the public tests provided by the course to check the functions in `implementations.py`.
+
+After creating and activating the environment (see Requirements), run:
+
+```bash
+cd grading_tests
+pytest --github_link https://github.com/jenberleon/project-1-/tree/$(git rev-parse HEAD) .
+```
+
+The tests require a link to a specific commit, not just to the repository. The command above builds it automatically from the latest local commit, so make sure all changes are pushed with `git push` before running it.
+
+The link can also be found in the browser: open the repository page on GitHub and press the `y` key. The address bar then shows a link of the form `https://github.com/jenberleon/project-1-/tree/<commit-id>`.
+
+To test the local code without pushing, use:
+
+```bash
+pytest --github_link .. .
+```

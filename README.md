@@ -166,3 +166,23 @@ The boosting hyperparameters in `src/boosting.py` were chosen by random search o
 
 It reached a cross-validated F1 of 0.4385 ± 0.0017, compared to 0.4344 for our initial settings. The best configurations scored within about 0.002 of each other, which is below the variation between folds. In all trials, the validation F1 peaked between about 75 and 125 trees while the training loss kept decreasing, a sign of overfitting beyond that point. The number of trees is therefore not fixed: `boosting.py` selects it by cross-validation, up to a maximum of 250.
 
+## Running the grading tests
+
+The `grading_tests/` folder contains the public tests provided by the course to check the functions in `implementations.py`. After creating and activating the environment (see Environment), run from the main project folder:
+
+```bash
+cd grading_tests
+pytest --github_link https://github.com/jenberleon/project-1-/tree/<commit-hash> .
+```
+
+where `<commit-hash>` is the ID of the commit to test. The tests require a link to a specific commit, not just to the repository. To get the link of the latest commit, open the repository on GitHub and press the `y` key, or let the terminal fill it in automatically:
+
+```bash
+pytest --github_link https://github.com/jenberleon/project-1-/tree/$(git rev-parse HEAD) .
+```
+
+Make sure all changes are pushed with `git push` first, so the commit exists on GitHub. To test the local code without pushing, use:
+
+```bash
+pytest --github_link .. .
+```

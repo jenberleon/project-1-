@@ -1,4 +1,4 @@
-'''
+"""
 Usage (run from the main project folder, expects the CSVs in dataset/):
   python -m src.baseline                     # full data, writes the submission
   python -m src.baseline --quick             # first 50,000 rows, no submission
@@ -7,7 +7,7 @@ Usage (run from the main project folder, expects the CSVs in dataset/):
   python -m src.baseline --missing-ind       # add "was missing" indicator columns
   python -m src.baseline --quick --one-hot   # options can be combined
 
-'''
+"""
 import sys
 import numpy as np
 from src.helpers import create_csv_submission
@@ -16,17 +16,18 @@ from src.preprocessing import load_data, fit_preprocessing, transform
 
 SEED = 42
 K_FOLDS = 5
-LAMBDA = 1e-4      # L2 regularization strength
-GAMMA = 0.5        # step size (assumes your loss is the MEAN over samples)
+LAMBDA = 1e-4  # L2 regularization strength
+GAMMA = 0.5  # step size (assumes your loss is the MEAN over samples)
 MAX_ITERS = 300
 THRESHOLDS = np.linspace(0.05, 0.95, 91)
 
-QUICK = "--quick" in sys.argv      # fast experiment on 50,000 rows
+QUICK = "--quick" in sys.argv  # fast experiment on 50,000 rows
 ONE_HOT = "--one-hot" in sys.argv  # one-hot encode categorical features
-NONE_CODES = "--none-codes" in sys.argv    # 88/888 ("none") -> 0
+NONE_CODES = "--none-codes" in sys.argv  # 88/888 ("none") -> 0
 MISSING_IND = "--missing-ind" in sys.argv  # add "was missing" columns
-PREPROCESSING_OPTIONS = dict(one_hot=ONE_HOT, none_codes=NONE_CODES,
-                             missing_ind=MISSING_IND)
+PREPROCESSING_OPTIONS = dict(
+    one_hot=ONE_HOT, none_codes=NONE_CODES, missing_ind=MISSING_IND
+)
 
 
 def sigmoid(z):
@@ -50,8 +51,9 @@ def train(x_raw, y01):
     """Fit preprocessing and the model on (x_raw, y01)."""
     params = fit_preprocessing(x_raw, **PREPROCESSING_OPTIONS)
     tx = transform(x_raw, params)
-    w, _ = reg_logistic_regression(y01, tx, LAMBDA, np.zeros(tx.shape[1]),
-                                   MAX_ITERS, GAMMA)
+    w, _ = reg_logistic_regression(
+        y01, tx, LAMBDA, np.zeros(tx.shape[1]), MAX_ITERS, GAMMA
+    )
     return params, w
 
 
@@ -64,7 +66,7 @@ def cross_validate(x, y01):
     rng = np.random.default_rng(SEED)
     folds = np.array_split(rng.permutation(len(y01)), K_FOLDS)
     scores = np.zeros((K_FOLDS, len(THRESHOLDS)))  # F1 per fold and threshold
-    accs = np.zeros((K_FOLDS, len(THRESHOLDS)))    # accuracy per fold and threshold
+    accs = np.zeros((K_FOLDS, len(THRESHOLDS)))  # accuracy per fold and threshold
 
     for k, val_idx in enumerate(folds):
         train_idx = np.concatenate([f for i, f in enumerate(folds) if i != k])

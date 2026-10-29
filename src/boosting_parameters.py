@@ -12,8 +12,8 @@ from src.preprocessing import load_data
 
 N_TRIALS = int(sys.argv[1]) if len(sys.argv) > 1 else 20
 N_ROWS = int(sys.argv[2]) if len(sys.argv) > 2 else 100_000
-FOLDS = 3              # fewer folds than the final run, to save time
-TREE_BUDGET = 25.0     # trees = TREE_BUDGET / learning rate (0.1 -> 250 trees)
+FOLDS = 3  # fewer folds than the final run, to save time
+TREE_BUDGET = 25.0  # trees = TREE_BUDGET / learning rate (0.1 -> 250 trees)
 
 SPACE = {
     "MAX_DEPTH": [3, 4, 5],
@@ -25,8 +25,14 @@ SPACE = {
 }
 
 # Your current setting, run first as the reference point.
-DEFAULT = {"MAX_DEPTH": 5, "LEARNING_RATE": 0.1, "REG_LAMBDA": 1.0,
-           "MIN_CHILD_HESS": 10.0, "ROW_SUBSAMPLE": 0.5, "COL_SUBSAMPLE": 0.5}
+DEFAULT = {
+    "MAX_DEPTH": 5,
+    "LEARNING_RATE": 0.1,
+    "REG_LAMBDA": 1.0,
+    "MIN_CHILD_HESS": 10.0,
+    "ROW_SUBSAMPLE": 0.5,
+    "COL_SUBSAMPLE": 0.5,
+}
 
 
 def apply(params):
@@ -48,24 +54,42 @@ if __name__ == "__main__":
 
     results = []
     for trial in range(N_TRIALS):
-        params = DEFAULT if trial == 0 else {k: v[rng.integers(len(v))] for k, v in SPACE.items()}
-        params = {k: (int(v) if k == "MAX_DEPTH" else float(v)) for k, v in params.items()}
+        params = (
+            DEFAULT
+            if trial == 0
+            else {k: v[rng.integers(len(v))] for k, v in SPACE.items()}
+        )
+        params = {
+            k: (int(v) if k == "MAX_DEPTH" else float(v)) for k, v in params.items()
+        }
         apply(params)
-        print(f"\n=== trial {trial + 1}/{N_TRIALS}: {params}, max trees {boosting.N_TREES}")
+        print(
+            f"\n=== trial {trial + 1}/{N_TRIALS}: {params}, max trees {boosting.N_TREES}"
+        )
         start = time.time()
         n_trees, thr, f1, f1_std, acc = boosting.cross_validate(x, y01)
-        results.append({**params, "n_trees": int(n_trees), "threshold": float(thr),
-                        "f1": float(f1), "f1_std": float(f1_std), "accuracy": float(acc),
-                        "hit_tree_limit": bool(n_trees == boosting.N_TREES),
-                        "seconds": round(time.time() - start)})
+        results.append(
+            {
+                **params,
+                "n_trees": int(n_trees),
+                "threshold": float(thr),
+                "f1": float(f1),
+                "f1_std": float(f1_std),
+                "accuracy": float(acc),
+                "hit_tree_limit": bool(n_trees == boosting.N_TREES),
+                "seconds": round(time.time() - start),
+            }
+        )
         with open("results/tuning_results.json", "w") as f:
             json.dump(results, f, indent=2)
 
     results.sort(key=lambda r: -r["f1"])
     print("\nTop 5 settings:")
     for r in results[:5]:
-        print(f"  F1 {r['f1']:.4f} +/- {r['f1_std']:.4f} | depth {r['MAX_DEPTH']}, "
-              f"lr {r['LEARNING_RATE']}, lambda {r['REG_LAMBDA']}, "
-              f"min_hess {r['MIN_CHILD_HESS']}, rows {r['ROW_SUBSAMPLE']}, "
-              f"cols {r['COL_SUBSAMPLE']} | {r['n_trees']} trees, thr {r['threshold']:.2f}"
-              + ("  (hit tree limit)" if r["hit_tree_limit"] else ""))
+        print(
+            f"  F1 {r['f1']:.4f} +/- {r['f1_std']:.4f} | depth {r['MAX_DEPTH']}, "
+            f"lr {r['LEARNING_RATE']}, lambda {r['REG_LAMBDA']}, "
+            f"min_hess {r['MIN_CHILD_HESS']}, rows {r['ROW_SUBSAMPLE']}, "
+            f"cols {r['COL_SUBSAMPLE']} | {r['n_trees']} trees, thr {r['threshold']:.2f}"
+            + ("  (hit tree limit)" if r["hit_tree_limit"] else "")
+        )

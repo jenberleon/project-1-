@@ -1,286 +1,157 @@
-# Predicting MICHD from BRFSS health survey data
+# Project 1 – Machine Learning (CS-433)
 
-This project predicts whether a person has **MICHD** (coronary heart disease or
-myocardial infarction) from their answers to the BRFSS health survey. The
-labels are in `{-1, 1}`, and the classes are strongly imbalanced, so models are
-evaluated with the **F1 score** rather than accuracy.
+This repository contains our code for Project 1 of the Machine Learning course at EPFL. The task is to predict a binary health outcome from survey data (BRFSS). It includes our implementations of the six required ML methods, the data preprocessing pipeline, a baseline based on regularized logistic regression, a gradient boosting model written from scratch in NumPy, and the experiments and figures used in our report.
 
-Everything is written in pure **NumPy**: no scikit-learn, pandas or other ML
-libraries are used.
+## Team
 
-We compare two families of models:
-
-- **Linear models** (least squares, ridge regression, logistic and regularized
-  logistic regression), implemented from scratch in `implementations.py`.
-- **Gradient-boosted decision trees** (`boosting.py`), also from scratch,
-  which can learn non-linear effects ("risk rises faster after 60") and
-  interactions ("old AND smoker") that a linear model cannot.
-
----
+-Mahmoud Y. Boukouis
+-Zakarias Hofstetter
+-Jeniffer P. Bermudez
 
 ## Repository structure
 
-| File | Purpose |
-|---|---|
-| `implementations.py` | The six required ML methods (GD, SGD, least squares, ridge, logistic, regularized logistic) and their loss/gradient helpers. |
-| `preprocessing.py` | Data loading (`load_data`), BRFSS missing-code handling, and the preprocessing pipeline (`fit_preprocessing`, `transform`). |
-| `helpers.py` | `create_csv_submission`, writes predictions in the submission format. |
-| `baseline.py` | Main linear pipeline: 5-fold CV of regularized logistic regression, threshold tuning, final `submission.csv`. Also defines the shared settings (seed, folds, thresholds, metrics). |
-| `compare_models.py` | Compares all linear models under identical conditions (same preprocessing, folds and threshold search). |
-| `boosting.py` | Gradient-boosted trees: CV over the number of trees and threshold, final `submission_boosting.csv`. |
-| `experiments.py` | Runs every experiment used in the report and saves the numbers to `results/results.json`. |
-| `make_figures.py` | Builds the report figures from `results/results.json`. |
-| `run.py` | Produces the final submission with the selected settings. |
-
----
+```
+project-1-/
+├── README.md
+├── run.py                      Runs the six required methods
+├── implementations.py          The six required ML methods (see below)
+├── .gitignore
+│
+├── src/                        Core code
+│   ├── helpers.py              Data loading and CSV submission (provided by the course)
+│   ├── preprocessing.py        Data cleaning and feature processing
+│   ├── baseline.py             Regularized logistic regression pipeline
+│   ├── boosting.py             Gradient boosting model
+│   └── boosting_parameters.py  Random search over the boosting hyperparameters
+│
+├── experiments/                Scripts for the report
+│   ├── compare_models.py       Cross-validated comparison of all linear models
+│   ├── experiments.py          Experiments (regularization, step size, threshold, ablation, timing)
+│   └── make_figures.py         Figures and tables from the experiment results
+│
+├── results/                    Saved results, figures and tables
+├── figures/                    Figures used in the report
+├── submissions/                Prediction files
+├── grading_tests/              Public tests provided by the course
+└── dataset/                    Data files (not tracked, see below)
+```
 
 ## Requirements
 
-- Python 3.8+
-- NumPy
-- Matplotlib (only for `make_figures.py`)
+The code only uses Python, NumPy and Matplotlib (for the figures). The easiest way to get the right versions is the course environment:
 
 ```bash
-pip install numpy matplotlib
+cd grading_tests
+conda env create --file=environment.yml --name=project1-grading
+conda activate project1-grading
 ```
 
 ## Data
 
-The dataset is **not included** in this repository: the CSV files are several
-hundred MB, too large for GitHub.
+Download `x_train.csv`, `y_train.csv` and `x_test.csv` from the course page and place them in the `dataset/` folder. The data is not included in the repository because of its size. On the first run, the data is loaded from the CSV files and saved as `dataset/cache.npz`, which makes later runs much faster.
 
-To run the code:
+## How to run the code
 
-1. Download the dataset from **[TODO: link to the course / AIcrowd page]**.
-2. Unzip it and place the CSV files in a `dataset/` folder at the root of the
-   repository:
+All commands must be run from the main project folder. The scripts inside `src/` and `experiments/` are run as modules with `python -m`, so that they can import each other.
 
-```
-dataset/
-├── x_train.csv
-├── y_train.csv
-└── x_test.csv
-```
+Most scripts accept `--quick`, which uses only the first 50,000 training rows and writes no submission. This is useful for testing.
 
-All scripts read the data from `dataset/`, so no path needs to be changed.
-The `dataset/` folder is listed in `.gitignore` so it is never committed by
-accident.
-
----
-
-## Quick start
-
-Reproduce the final submission:
+### Required methods
 
 ```bash
-git clone <repository-url>
-cd <repository-folder>
-# download the data into dataset/ (see "Data" above)
 python run.py
 ```
 
-Every script accepts `--quick`, which uses only the first 50,000 training rows
-and writes no submission. Use it to check that everything runs before
-launching a full (slow) run:
+This runs each of the six functions in `implementations.py` on a small example and prints the resulting weights and loss.
+
+### Baseline: regularized logistic regression
 
 ```bash
-python baseline.py --quick
-python boosting.py --quick
-python experiments.py --quick
+python -m src.baseline
 ```
 
----
-
-## Scripts in detail
-
-### `baseline.py`: regularized logistic regression
+This runs 5-fold cross-validation, chooses the decision threshold that maximizes F1, then retrains on all training data and writes `submissions/submission.csv`. Additional preprocessing options can be combined:
 
 ```bash
-python baseline.py                     # full data, writes submission.csv
-python baseline.py --one-hot           # one-hot encode categorical features
-python baseline.py --none-codes        # turn BRFSS "none" codes (88/888) into 0
-python baseline.py --missing-ind       # add "was missing" indicator columns
-python baseline.py --quick --one-hot   # options can be combined
+python -m src.baseline --quick              # first 50,000 rows, no submission
+python -m src.baseline --one-hot            # one-hot encode categorical features
+python -m src.baseline --none-codes         # turn BRFSS "none" codes (88/888) into 0
+python -m src.baseline --missing-ind        # add "was missing" indicator columns
 ```
 
-1. Loads and preprocesses the data.
-2. Runs 5-fold cross-validation of regularized logistic regression and picks
-   the decision threshold that maximizes the mean validation F1.
-3. Retrains on all training data, predicts the test set and writes
-   `submission.csv`.
-
-### `compare_models.py`: fair comparison of linear models
+### Gradient boosting
 
 ```bash
-python compare_models.py            # full data
-python compare_models.py --quick    # first 50,000 rows
-python compare_models.py --one-hot  # same preprocessing flags as baseline.py
+python -m src.boosting
 ```
 
-On every fold, preprocessing is fitted **once** on the training part and shared
-by all models, so they are compared on exactly the same features. Models
-compared: least squares, ridge regression and regularized logistic regression
-for each λ in `{1e-5, 1e-4, 1e-3, 1e-2}`, and unregularized logistic
-regression. Each model is reported at its own best threshold, next to the
-trivial "always predict no" baseline.
+This runs 5-fold cross-validation to choose the number of trees (up to 250) and the decision threshold, then retrains on all training data and writes `submissions/submission_boosting.csv`. Use `--quick` for a fast test.
 
-If a model hits a singular matrix (e.g. least squares on strongly correlated
-features), it is skipped on that fold instead of crashing the run.
-
-### `boosting.py`: gradient-boosted trees
+### Hyperparameter tuning for boosting
 
 ```bash
-python boosting.py          # CV, then trains on all data, writes submission_boosting.csv
-python boosting.py --quick  # first 50,000 rows only, no submission
+python -m src.boosting_parameters 10 100000
 ```
 
-How it works:
+The first argument is the number of random trials and the second the number of training rows used. Each trial is evaluated with 3-fold cross-validation. The search uses a fixed seed, so it always tries the same settings in the same order. The results are saved in `results/tuning_results.json`.
 
-- Each feature is cut into at most 32 bins using quantiles of the **training
-  fold only**; bin 0 is reserved for missing values.
-- Boosting starts from a constant prediction (the overall log-odds of MICHD)
-  and adds small trees one at a time. Each tree is fitted to the gradient and
-  Hessian of the logistic loss at the current prediction (the XGBoost idea).
-- At each split, missing values are sent to whichever side gives the larger
-  gain, so no imputation is needed.
-- Each leaf outputs a log-odds correction; the predicted probability is
-  `sigmoid(base log-odds + sum of all tree corrections)`.
-- Cross-validation chooses both the number of trees (checked every 50 trees)
-  and the decision threshold.
+### Experiments and figures
 
-### `experiments.py`: all numbers for the report
+`make_figures` reads the results saved by `experiments`, so run them in this order:
 
 ```bash
-python experiments.py --quick                    # 50,000 rows, to test first
-python experiments.py                            # full data, all stages (slow)
-python experiments.py --stages models,ablation   # only some stages
-python make_figures.py                           # figures (add --quick for quick results)
+python -m experiments.compare_models
+python -m experiments.experiments
+python -m experiments.make_figures
 ```
 
-| Stage | What it does | Used for |
-|---|---|---|
-| `models` | All linear models with plain preprocessing, for every λ | Method comparison, choice of λ |
-| `ablation` | Reg. logistic regression (best λ) with each preprocessing option switched on | Ablation table |
-| `gamma` | Training loss per iteration for γ ∈ `{0.05, 0.1, 0.5, 1, 2}` on one fold, for 600 iterations | Choice of γ and of the number of iterations |
-| `boosting` | CV F1 and validation log-loss every 25 trees | Choice of the number of trees |
+`experiments` saves its results in `results/results.json`, and `make_figures` writes the figures and the table into `results/`. With `--quick`, they use `results/results_quick.json` and `results/quick/` instead.
 
-Results are saved to `results/results.json` (`results/results_quick.json`
-with `--quick`). Results from earlier runs are loaded and kept, so stages can
-be run separately (e.g. on different days) and still end up in one file.
-Training time is recorded for every model.
+## Implemented methods
 
----
+All functions are in `implementations.py` and return `(w, loss)`, where `w` is the final weight vector and `loss` the corresponding loss. For the regularized methods, the returned loss does not include the penalty term.
 
-## Methods
-
-### Preprocessing
-
-Preprocessing is always **fitted on the training fold only** and then applied
-to the validation fold (and, for the final model, to the test set), so no
-information leaks from validation data.
-
-- **Missing codes**: BRFSS encodes answers such as "don't know" or "refused"
-  with special values (e.g. 7/9, 77/99). Columns using such codes are detected
-  automatically and those values are treated as missing.
-- **Optional steps** (switched on by command-line flags, tested in the
-  ablation):
-  - `--none-codes`: BRFSS "none" codes (88/888) become 0, since they mean a
-    count of zero rather than a missing answer.
-  - `--missing-ind`: adds a column per feature telling whether the value was
-    missing; missingness itself can be informative.
-  - `--one-hot`: one-hot encodes categorical features, so the model no longer
-    treats category codes as ordered numbers.
-
-### Models (`implementations.py`)
-
-| Function | Method |
+| Function | Description |
 |---|---|
-| `mean_squared_error_gd(y, tx, initial_w, max_iters, gamma)` | Linear regression, gradient descent |
-| `mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma)` | Linear regression, SGD (batch size 1) |
-| `least_squares(y, tx)` | Normal equations |
-| `ridge_regression(y, tx, lambda_)` | Normal equations with L2 penalty |
-| `logistic_regression(y, tx, initial_w, max_iters, gamma)` | Gradient descent, `y ∈ {0, 1}` |
-| `reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma)` | Gradient descent with L2 penalty, `y ∈ {0, 1}` |
+| `mean_squared_error_gd(y, tx, initial_w, max_iters, gamma)` | Linear regression using gradient descent |
+| `mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma)` | Linear regression using stochastic gradient descent (batch size 1) |
+| `least_squares(y, tx)` | Least squares using the normal equations |
+| `ridge_regression(y, tx, lambda_)` | Ridge regression using the normal equations |
+| `logistic_regression(y, tx, initial_w, max_iters, gamma)` | Logistic regression using gradient descent |
+| `reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma)` | Regularized logistic regression using gradient descent |
 
-All functions return `(w, loss)`. Conventions:
+## Evaluation
 
-- The MSE loss is `(1/2N) Σ (y − Xw)²`; the logistic loss is the **mean**
-  binary cross-entropy.
-- Ridge minimizes `(1/2N)‖y − Xw‖² + λ‖w‖²`, which gives
-  `(XᵀX + 2Nλ I) w = Xᵀy`.
-- Regularized logistic regression minimizes the mean logistic loss plus
-  `λ‖w‖²`, so the penalty adds `2λw` to the gradient.
-- The returned loss **never includes** the regularization term.
+The classes are strongly imbalanced (about 9% positives), so a model that always predicts "no" reaches about 91% accuracy but an F1 score of 0. We therefore evaluate all models with the F1 score, using k-fold cross-validation with a fixed seed (42). For each model, the decision threshold is chosen to maximize the mean F1 over the folds; the best thresholds are around 0.2 rather than the default 0.5. The preprocessing is fitted on the training folds only, so the validation fold never influences it.
 
-Regression models are fitted directly on the 0/1 labels, so `tx @ w` is used
-as a score around [0, 1]; logistic models pass it through a sigmoid.
+## Boosting hyperparameters
 
-### Evaluation
+The boosting hyperparameters in `src/boosting.py` were chosen by random search over 10 configurations, using 3-fold cross-validation on 100,000 training rows (`src/boosting_parameters.py`). The selected setting is:
 
-- **5-fold cross-validation** with a fixed seed (42). All scripts build the
-  folds the same way, so results from different scripts are directly
-  comparable.
-- **Threshold tuning**: the default threshold of 0.5 predicts far too few
-  positives on imbalanced data. Every model is evaluated at thresholds from
-  0.05 to 0.95 (step 0.01), and we keep the threshold with the best **mean F1
-  over the folds**.
-- We report the mean F1 ± its standard deviation over folds, and the accuracy
-  at the chosen threshold. Accuracy alone is misleading here: always
-  predicting "no" already gets high accuracy with an F1 of 0.
-
----
-
-## Hyperparameters
-
-**Linear models** (`baseline.py`)
-
-| Setting | Value |
+| Parameter | Value |
 |---|---|
-| λ (L2 strength) | `1e-4` |
-| γ (step size) | `0.5` |
-| Iterations | `300` |
+| `MAX_DEPTH` | 5 |
+| `LEARNING_RATE` | 0.1 |
+| `REG_LAMBDA` | 0.1 |
+| `MIN_CHILD_HESS` | 2.0 |
+| `ROW_SUBSAMPLE` | 0.9 |
+| `COL_SUBSAMPLE` | 0.5 |
 
-**Gradient boosting** (`boosting.py`)
+It reached a cross-validated F1 of 0.4385 ± 0.0017, compared to 0.4344 for our initial settings. The best configurations scored within about 0.002 of each other, which is below the variation between folds. In all trials, the validation F1 peaked between about 75 and 125 trees while the training loss kept decreasing, a sign of overfitting beyond that point. The number of trees is therefore not fixed: `boosting.py` selects it by cross-validation, up to a maximum of 250.
 
-| Setting | Value | Meaning |
-|---|---|---|
-| `N_BINS` | 32 | Bins per feature (bin 0 = missing) |
-| `N_TREES` | 250 | Maximum number of trees |
-| `MAX_DEPTH` | 5 | Depth of each tree |
-| `LEARNING_RATE` | 0.1 | Shrinks each tree's correction |
-| `REG_LAMBDA` | 1.0 | L2 penalty on leaf values |
-| `MIN_CHILD_HESS` | 10.0 | Minimum Hessian sum per leaf (≈ minimum leaf size) |
-| `ROW_SUBSAMPLE` | 0.5 | Fraction of rows used per tree |
-| `COL_SUBSAMPLE` | 0.5 | Fraction of features considered per tree |
+## Running the grading tests
 
----
+The `grading_tests/` folder contains the public tests provided by the course to check the functions in `implementations.py`. After creating and activating the environment (see Requirements), run:
 
-## Results
+```bash
+cd grading_tests
+pytest --github_link https://github.com/jenberleon/project-1-/tree/$(git rev-parse HEAD) .
+```
 
-5-fold cross-validation on the full training set:
+The tests require a link to a specific commit, not just to the repository. The command above builds it automatically from the latest local commit, so make sure all changes are pushed with `git push` before running it. The link can also be found in the browser: open the repository page on GitHub and press the `y` key.
 
-| Model | CV F1 | Accuracy | Threshold |
-|---|---|---|---|
-| Always predict "no" | 0.0000 | _TODO_ | – |
-| Least squares | _TODO_ | _TODO_ | _TODO_ |
-| Ridge regression (best λ) | _TODO_ | _TODO_ | _TODO_ |
-| Logistic regression | _TODO_ | _TODO_ | _TODO_ |
-| Reg. logistic regression (best λ) | _TODO_ | _TODO_ | _TODO_ |
-| Gradient-boosted trees | _TODO_ | _TODO_ | _TODO_ |
+To test the local code without pushing, use:
 
-Fill these in from the output of `python experiments.py`.
-
----
-
-## Reproducibility
-
-- All random choices (fold split, row and column subsampling in boosting) use
-  the seed `42`, so every run gives the same numbers.
-- `mean_squared_error_sgd` uses `np.random` without a seed; it is not used in
-  the experiments.
-
-## Authors
-
-- _Name 1_
-- _Name 2_
-- _Name 3_
+```bash
+pytest --github_link .. .
+```

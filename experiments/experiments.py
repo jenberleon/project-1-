@@ -6,18 +6,33 @@ import time
 import numpy as np
 
 from src import boosting
-from src.baseline import (SEED, K_FOLDS, LAMBDA, GAMMA, MAX_ITERS, THRESHOLDS,
-                      sigmoid, f1_score, accuracy)
-from implementations import (least_squares, ridge_regression,
-                             logistic_regression, reg_logistic_regression)
+from src.baseline import (
+    SEED,
+    K_FOLDS,
+    LAMBDA,
+    GAMMA,
+    MAX_ITERS,
+    THRESHOLDS,
+    sigmoid,
+    f1_score,
+    accuracy,
+)
+from implementations import (
+    least_squares,
+    ridge_regression,
+    logistic_regression,
+    reg_logistic_regression,
+)
 from src.preprocessing import load_data, fit_preprocessing, transform
 
 QUICK = "--quick" in sys.argv
 ALL_STAGES = ["models", "ablation", "gamma", "boosting"]
 LAMBDAS = [1e-5, 1e-4, 1e-3, 1e-2]
 GAMMAS = [0.05, 0.1, 0.5, 1.0, 2.0]
-GAMMA_ITERS = 2 * MAX_ITERS  # run longer than MAX_ITERS to see whether the loss has flattened
-TREE_STEP = 25               # evaluate boosting every 25 trees
+GAMMA_ITERS = (
+    2 * MAX_ITERS
+)  # run longer than MAX_ITERS to see whether the loss has flattened
+TREE_STEP = 25  # evaluate boosting every 25 trees
 ABLATION = {
     "plain": {},
     "+ none codes": {"none_codes": True},
@@ -25,7 +40,9 @@ ABLATION = {
     "+ one-hot": {"one_hot": True},
     "all three": {"none_codes": True, "missing_ind": True, "one_hot": True},
 }
-RESULTS_FILE = os.path.join("results", "results_quick.json" if QUICK else "results.json")
+RESULTS_FILE = os.path.join(
+    "results", "results_quick.json" if QUICK else "results.json"
+)
 
 
 # ---------------------------------------------------------------- helpers
@@ -85,8 +102,12 @@ def summarize(f1, acc):
     if np.all(np.isnan(mean)):
         return None
     b = int(np.nanargmax(mean))
-    return {"f1": float(mean[b]), "f1_std": float(f1[:, b].std()),
-            "acc": float(acc[:, b].mean()), "threshold": float(THRESHOLDS[b])}
+    return {
+        "f1": float(mean[b]),
+        "f1_std": float(f1[:, b].std()),
+        "acc": float(acc[:, b].mean()),
+        "threshold": float(THRESHOLDS[b]),
+    }
 
 
 def fmt_time(seconds):
@@ -96,45 +117,67 @@ def fmt_time(seconds):
 
 
 def print_table(rows):
-    print(f"\n  {'model':<30}{'CV F1':>17}{'accuracy':>10}{'threshold':>11}{'time/fold':>11}")
+    print(
+        f"\n  {'model':<30}{'CV F1':>17}{'accuracy':>10}{'threshold':>11}{'time/fold':>11}"
+    )
     for name, r in rows.items():
         s = r["summary"]
         if s is None:
             print(f"  {name:<30}{'failed':>17}")
             continue
         f1_text = f"{s['f1']:.4f} +/- {s['f1_std']:.4f}"
-        print(f"  {name:<30}{f1_text:>17}{s['acc']:>10.4f}{s['threshold']:>11.2f}"
-              f"{fmt_time(np.nanmean(r['time'])):>11}")
+        print(
+            f"  {name:<30}{f1_text:>17}{s['acc']:>10.4f}{s['threshold']:>11.2f}"
+            f"{fmt_time(np.nanmean(r['time'])):>11}"
+        )
 
 
 # ---------------------------------------------------------------- linear models
-def linear_models(lambdas, families=("least squares", "ridge", "logistic", "reg. logistic")):
+def linear_models(
+    lambdas, families=("least squares", "ridge", "logistic", "reg. logistic")
+):
     """name -> (fit, family, lambda). fit(y, tx) returns (w, outputs_probability).
 
     Regression models fit the 0/1 labels directly, so tx @ w is already a score
     around [0, 1]; logistic models need the sigmoid.
     """
+
     def zeros(tx):
         return np.zeros(tx.shape[1])
 
     models = {}
     if "least squares" in families:
         models["least squares"] = (
-            lambda y, tx: (least_squares(y, tx)[0], False), "least squares", None)
+            lambda y, tx: (least_squares(y, tx)[0], False),
+            "least squares",
+            None,
+        )
     if "ridge" in families:
         for lam in lambdas:
             models[f"ridge lambda={lam:g}"] = (
-                lambda y, tx, lam=lam: (ridge_regression(y, tx, lam)[0], False), "ridge", lam)
+                lambda y, tx, lam=lam: (ridge_regression(y, tx, lam)[0], False),
+                "ridge",
+                lam,
+            )
     if "logistic" in families:
         models["logistic"] = (
-            lambda y, tx: (logistic_regression(y, tx, zeros(tx), MAX_ITERS, GAMMA)[0], True),
-            "logistic", None)
+            lambda y, tx: (
+                logistic_regression(y, tx, zeros(tx), MAX_ITERS, GAMMA)[0],
+                True,
+            ),
+            "logistic",
+            None,
+        )
     if "reg. logistic" in families:
         for lam in lambdas:
             models[f"reg. logistic lambda={lam:g}"] = (
-                lambda y, tx, lam=lam: (reg_logistic_regression(
-                    y, tx, lam, zeros(tx), MAX_ITERS, GAMMA)[0], True),
-                "reg. logistic", lam)
+                lambda y, tx, lam=lam: (
+                    reg_logistic_regression(y, tx, lam, zeros(tx), MAX_ITERS, GAMMA)[0],
+                    True,
+                ),
+                "reg. logistic",
+                lam,
+            )
     return models
 
 
@@ -144,8 +187,10 @@ def cv_linear(x, y, folds, models, options):
     Preprocessing is fitted once per fold on the training part and shared by
     all models, so they are compared on exactly the same features.
     """
-    out = {name: {"family": fam, "lambda": lam, "f1": [], "acc": [], "time": []}
-           for name, (_, fam, lam) in models.items()}
+    out = {
+        name: {"family": fam, "lambda": lam, "f1": [], "acc": [], "time": []}
+        for name, (_, fam, lam) in models.items()
+    }
     prep_time, n_features = [], 0
     for k in range(K_FOLDS):
         tr, va = split(folds, k)
@@ -186,10 +231,15 @@ def cv_linear(x, y, folds, models, options):
 def best_lambda(results):
     """Lambda of the best reg. logistic model in the 'models' stage."""
     if "models" not in results:
-        print(f"  ('models' stage not run yet: using LAMBDA={LAMBDA:g} from baseline.py)")
+        print(
+            f"  ('models' stage not run yet: using LAMBDA={LAMBDA:g} from baseline.py)"
+        )
         return LAMBDA
-    rows = [r for r in results["models"]["rows"].values()
-            if r["family"] == "reg. logistic" and r["summary"]]
+    rows = [
+        r
+        for r in results["models"]["rows"].values()
+        if r["family"] == "reg. logistic" and r["summary"]
+    ]
     return max(rows, key=lambda r: r["summary"]["f1"])["lambda"] if rows else LAMBDA
 
 
@@ -203,11 +253,17 @@ def stage_models(x, y, folds, results):
 
 def stage_ablation(x, y, folds, results):
     lam = best_lambda(results)
-    print(f"\n=== ablation: reg. logistic, lambda={lam:g}, each preprocessing option ===")
+    print(
+        f"\n=== ablation: reg. logistic, lambda={lam:g}, each preprocessing option ==="
+    )
     rows = {}
     for setting, options in ABLATION.items():
         name = f"reg. logistic lambda={lam:g}"
-        if setting == "plain" and "models" in results and name in results["models"]["rows"]:
+        if (
+            setting == "plain"
+            and "models" in results
+            and name in results["models"]["rows"]
+        ):
             rows[setting] = results["models"]["rows"][name]  # same folds: reuse
             print(f"\n  setting '{setting}': reused from the 'models' stage")
             continue
@@ -236,16 +292,23 @@ def stage_gamma(x, y, folds, results):
                 w, loss = logistic_regression(y[tr], tx_tr, w, 1, gamma)
                 losses.append(float(loss))
             f1, _ = threshold_scores(y[va], sigmoid(tx_va @ w))
-        curves[f"{gamma:g}"] = {"loss": losses, "val_f1": max(f1),
-                                "time": time.perf_counter() - t0}
-        print(f"  gamma={gamma:g}: loss after {MAX_ITERS} it. {losses[MAX_ITERS - 1]:.4f}, "
-              f"after {GAMMA_ITERS} it. {losses[-1]:.4f}, validation F1 {max(f1):.4f}")
+        curves[f"{gamma:g}"] = {
+            "loss": losses,
+            "val_f1": max(f1),
+            "time": time.perf_counter() - t0,
+        }
+        print(
+            f"  gamma={gamma:g}: loss after {MAX_ITERS} it. {losses[MAX_ITERS - 1]:.4f}, "
+            f"after {GAMMA_ITERS} it. {losses[-1]:.4f}, validation F1 {max(f1):.4f}"
+        )
     results["gamma"] = {"max_iters": MAX_ITERS, "curves": curves}
 
 
 def stage_boosting(x, y, folds, results):
-    print(f"\n=== boosting: up to {boosting.N_TREES} trees, depth {boosting.MAX_DEPTH}, "
-          f"learning rate {boosting.LEARNING_RATE} ===")
+    print(
+        f"\n=== boosting: up to {boosting.N_TREES} trees, depth {boosting.MAX_DEPTH}, "
+        f"learning rate {boosting.LEARNING_RATE} ==="
+    )
     boosting.CHECK_EVERY = TREE_STEP  # fit_boosting reads this module setting
     checkpoints = list(range(TREE_STEP, boosting.N_TREES + 1, TREE_STEP))
     f1 = np.zeros((K_FOLDS, len(checkpoints), len(THRESHOLDS)))
@@ -271,26 +334,42 @@ def stage_boosting(x, y, folds, results):
     print("\n  trees   CV F1             val. log-loss  threshold")
     for c, m in enumerate(checkpoints):
         s = per_trees[c]
-        print(f"  {m:>5}   {s['f1']:.4f} +/- {s['f1_std']:.4f}   {logloss[:, c].mean():.4f}"
-              f"         {s['threshold']:.2f}")
+        print(
+            f"  {m:>5}   {s['f1']:.4f} +/- {s['f1_std']:.4f}   {logloss[:, c].mean():.4f}"
+            f"         {s['threshold']:.2f}"
+        )
     s = per_trees[best]
-    print(f"\n  best: {checkpoints[best]} trees, threshold {s['threshold']:.2f}, "
-          f"CV F1 {s['f1']:.4f} -> put these two numbers in run.py")
+    print(
+        f"\n  best: {checkpoints[best]} trees, threshold {s['threshold']:.2f}, "
+        f"CV F1 {s['f1']:.4f} -> put these two numbers in run.py"
+    )
     results["boosting"] = {
-        "checkpoints": checkpoints, "f1": f1.tolist(), "acc": acc.tolist(),
-        "val_logloss": logloss.tolist(), "time": times, "per_trees": per_trees,
-        "best_trees": checkpoints[best], "summary": s,
-        "settings": {"n_bins": boosting.N_BINS, "max_depth": boosting.MAX_DEPTH,
-                     "learning_rate": boosting.LEARNING_RATE,
-                     "reg_lambda": boosting.REG_LAMBDA,
-                     "min_child_hess": boosting.MIN_CHILD_HESS,
-                     "row_subsample": boosting.ROW_SUBSAMPLE,
-                     "col_subsample": boosting.COL_SUBSAMPLE},
+        "checkpoints": checkpoints,
+        "f1": f1.tolist(),
+        "acc": acc.tolist(),
+        "val_logloss": logloss.tolist(),
+        "time": times,
+        "per_trees": per_trees,
+        "best_trees": checkpoints[best],
+        "summary": s,
+        "settings": {
+            "n_bins": boosting.N_BINS,
+            "max_depth": boosting.MAX_DEPTH,
+            "learning_rate": boosting.LEARNING_RATE,
+            "reg_lambda": boosting.REG_LAMBDA,
+            "min_child_hess": boosting.MIN_CHILD_HESS,
+            "row_subsample": boosting.ROW_SUBSAMPLE,
+            "col_subsample": boosting.COL_SUBSAMPLE,
+        },
     }
 
 
-STAGES = {"models": stage_models, "ablation": stage_ablation,
-          "gamma": stage_gamma, "boosting": stage_boosting}
+STAGES = {
+    "models": stage_models,
+    "ablation": stage_ablation,
+    "gamma": stage_gamma,
+    "boosting": stage_boosting,
+}
 
 if __name__ == "__main__":
     stages = parse_stages()
@@ -300,14 +379,23 @@ if __name__ == "__main__":
         x, y_pm = x[:50000], y_pm[:50000]
     y = (y_pm == 1).astype(float)  # labels {-1, 1} -> {0, 1}
     folds = make_folds(len(y))
-    print(f"{len(y)} rows, {x.shape[1]} raw features, {100 * y.mean():.1f}% positive, "
-          f"stages: {stages}")
+    print(
+        f"{len(y)} rows, {x.shape[1]} raw features, {100 * y.mean():.1f}% positive, "
+        f"stages: {stages}"
+    )
 
     results = load_results()
-    results["info"] = {"quick": QUICK, "n_rows": len(y), "n_raw_features": x.shape[1],
-                       "positive_rate": float(y.mean()), "thresholds": THRESHOLDS.tolist(),
-                       "k_folds": K_FOLDS, "seed": SEED, "gamma": GAMMA,
-                       "max_iters": MAX_ITERS}
+    results["info"] = {
+        "quick": QUICK,
+        "n_rows": len(y),
+        "n_raw_features": x.shape[1],
+        "positive_rate": float(y.mean()),
+        "thresholds": THRESHOLDS.tolist(),
+        "k_folds": K_FOLDS,
+        "seed": SEED,
+        "gamma": GAMMA,
+        "max_iters": MAX_ITERS,
+    }
     for stage in stages:
         t0 = time.perf_counter()
         STAGES[stage](x, y, folds, results)

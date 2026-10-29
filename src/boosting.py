@@ -9,15 +9,15 @@ from src.helpers import create_csv_submission
 from src.preprocessing import load_data, find_code_cols, replace_missing_codes
 from src.baseline import SEED, K_FOLDS, THRESHOLDS, sigmoid, f1_score, accuracy
 
-N_BINS = 32            # bins per feature, bin 0 = missing
-N_TREES = 250          # maximum number of trees
-CHECK_EVERY = 50       # evaluate on the validation fold every 50 trees
-MAX_DEPTH = 5          # depth of each tree
-LEARNING_RATE = 0.1    # shrinks each tree's correction (smaller = more careful)
-REG_LAMBDA = 0.1       # L2 penalty on leaf values
-MIN_CHILD_HESS = 2.0   # minimum Hessian sum per leaf (roughly a minimum leaf size)
-ROW_SUBSAMPLE = 0.9    # fraction of rows used to build each tree
-COL_SUBSAMPLE = 0.5    # fraction of features considered by each tree
+N_BINS = 32  # bins per feature, bin 0 = missing
+N_TREES = 250  # maximum number of trees
+CHECK_EVERY = 50  # evaluate on the validation fold every 50 trees
+MAX_DEPTH = 5  # depth of each tree
+LEARNING_RATE = 0.1  # shrinks each tree's correction (smaller = more careful)
+REG_LAMBDA = 0.1  # L2 penalty on leaf values
+MIN_CHILD_HESS = 2.0  # minimum Hessian sum per leaf (roughly a minimum leaf size)
+ROW_SUBSAMPLE = 0.9  # fraction of rows used to build each tree
+COL_SUBSAMPLE = 0.5  # fraction of features considered by each tree
 QUICK = "--quick" in sys.argv
 
 
@@ -25,13 +25,15 @@ QUICK = "--quick" in sys.argv
 def fit_bins(x):
     """
     Quantile bin edges for each feature, from training data only.
-    
+
     """
     quantiles = np.linspace(0, 1, N_BINS)[1:-1]
     edges = []
     for j in range(x.shape[1]):
         col = x[~np.isnan(x[:, j]), j]
-        edges.append(np.unique(np.quantile(col, quantiles)) if col.size else np.array([]))
+        edges.append(
+            np.unique(np.quantile(col, quantiles)) if col.size else np.array([])
+        )
     return edges
 
 
@@ -79,8 +81,11 @@ def best_split(xb, g, h, idx, features, G, H):
             ok = (hl >= MIN_CHILD_HESS) & (hr >= MIN_CHILD_HESS)
             if not ok.any():
                 continue
-            gain = np.where(ok, gl**2 / (hl + REG_LAMBDA) + gr**2 / (hr + REG_LAMBDA) - parent,
-                            -np.inf)
+            gain = np.where(
+                ok,
+                gl**2 / (hl + REG_LAMBDA) + gr**2 / (hr + REG_LAMBDA) - parent,
+                -np.inf,
+            )
             t = np.argmax(gain)
             if gain[t] > best_gain:
                 best_gain, best = gain[t], (j, t + 1, missing_left)
@@ -89,11 +94,24 @@ def best_split(xb, g, h, idx, features, G, H):
 
 def build_tree(xb, g, h, rows, features):
     """Grow one tree level by level. Returns it as a dict of arrays."""
-    tree = {"feat": [], "thr": [], "miss_left": [], "left": [], "right": [], "value": []}
+    tree = {
+        "feat": [],
+        "thr": [],
+        "miss_left": [],
+        "left": [],
+        "right": [],
+        "value": [],
+    }
 
     def new_node():
-        for key, default in (("feat", -1), ("thr", 0), ("miss_left", False),
-                             ("left", -1), ("right", -1), ("value", 0.0)):
+        for key, default in (
+            ("feat", -1),
+            ("thr", 0),
+            ("miss_left", False),
+            ("left", -1),
+            ("right", -1),
+            ("value", 0.0),
+        ):
             tree[key].append(default)
         return len(tree["feat"]) - 1
 
@@ -205,20 +223,30 @@ def cross_validate(x, y01):
     print("\nCV F1 (best threshold) by number of trees:")
     for i, m in enumerate(checkpoints):
         print(f"  {m:>4} trees: {mean_f1[i].max():.4f}")
-    return checkpoints[c], THRESHOLDS[t], mean_f1[c, t], f1[:, c, t].std(), acc[:, c, t].mean()
+    return (
+        checkpoints[c],
+        THRESHOLDS[t],
+        mean_f1[c, t],
+        f1[:, c, t].std(),
+        acc[:, c, t].mean(),
+    )
 
 
 if __name__ == "__main__":
     x_train, x_test, y_train, train_ids, test_ids = load_data("dataset/")
     if QUICK:
         x_train, y_train = x_train[:50000], y_train[:50000]
-    print(f"Settings: quick={QUICK}, trees<={N_TREES}, depth={MAX_DEPTH}, "
-          f"learning rate={LEARNING_RATE}")
+    print(
+        f"Settings: quick={QUICK}, trees<={N_TREES}, depth={MAX_DEPTH}, "
+        f"learning rate={LEARNING_RATE}"
+    )
     y01 = (y_train == 1).astype(float)  # labels {-1, 1} -> {0, 1}
 
     n_trees, threshold, f1_mean, f1_std, acc_mean = cross_validate(x_train, y01)
-    print(f"\nCV F1 = {f1_mean:.4f} +/- {f1_std:.4f} with {n_trees} trees, "
-          f"threshold {threshold:.2f}")
+    print(
+        f"\nCV F1 = {f1_mean:.4f} +/- {f1_std:.4f} with {n_trees} trees, "
+        f"threshold {threshold:.2f}"
+    )
     print(f"CV accuracy at that threshold = {acc_mean:.4f}")
     print(f"(always predicting 'no' would give accuracy {1 - y01.mean():.4f}, F1 0)")
 

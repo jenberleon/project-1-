@@ -16,8 +16,14 @@ def load_data(data_path="dataset/"):
         d = np.load(cache)
         return d["x_train"], d["x_test"], d["y_train"], d["train_ids"], d["test_ids"]
     x_train, x_test, y_train, train_ids, test_ids = load_csv_data(data_path)
-    np.savez(cache, x_train=x_train, x_test=x_test, y_train=y_train,
-             train_ids=train_ids, test_ids=test_ids)
+    np.savez(
+        cache,
+        x_train=x_train,
+        x_test=x_test,
+        y_train=y_train,
+        train_ids=train_ids,
+        test_ids=test_ids,
+    )
     return x_train, x_test, y_train, train_ids, test_ids
 
 
@@ -81,7 +87,7 @@ def expand_features(x, cats, ind_cols):
     num_cols = [j for j in range(x.shape[1]) if j not in cats]
     n_new = sum(len(values) for values in cats.values()) + len(ind_cols)
     out = np.empty((x.shape[0], len(num_cols) + n_new))
-    out[:, :len(num_cols)] = x[:, num_cols]
+    out[:, : len(num_cols)] = x[:, num_cols]
     c = len(num_cols)
     for j, values in cats.items():
         for v in values:
@@ -100,9 +106,16 @@ def fill_missing(x, medians):
         col[np.isnan(col)] = medians[j]
 
 
-def fit_preprocessing(x, max_missing=0.8, one_hot=False, none_codes=False,
-                      missing_ind=False, max_categories=10, min_freq=0.01,
-                      min_missing_ind=0.05):
+def fit_preprocessing(
+    x,
+    max_missing=0.8,
+    one_hot=False,
+    none_codes=False,
+    missing_ind=False,
+    max_categories=10,
+    min_freq=0.01,
+    min_missing_ind=0.05,
+):
     """Learn all preprocessing parameters from training data x.
 
     Steps: (1) detect columns using BRFSS missing codes, optionally turn the
@@ -131,8 +144,9 @@ def fit_preprocessing(x, max_missing=0.8, one_hot=False, none_codes=False,
     ind_cols = []
     if missing_ind:
         frac = np.isnan(x).mean(axis=0)
-        ind_cols = [j for j in range(x.shape[1])
-                    if j not in cats and frac[j] >= min_missing_ind]
+        ind_cols = [
+            j for j in range(x.shape[1]) if j not in cats and frac[j] >= min_missing_ind
+        ]
     if cats or ind_cols:
         x = expand_features(x, cats, ind_cols)
 

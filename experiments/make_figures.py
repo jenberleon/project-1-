@@ -12,15 +12,25 @@ import sys
 
 import numpy as np
 import matplotlib
+
 matplotlib.use("Agg")  # no window needed, just files
 import matplotlib.pyplot as plt
 
 QUICK = "--quick" in sys.argv
-RESULTS_FILE = os.path.join("results", "results_quick.json" if QUICK else "results.json")
+RESULTS_FILE = os.path.join(
+    "results", "results_quick.json" if QUICK else "results.json"
+)
 OUT = os.path.join("results", "quick") if QUICK else "results"
-plt.rcParams.update({"font.size": 8, "figure.figsize": (3.4, 2.2),
-                     "savefig.bbox": "tight", "axes.spines.top": False,
-                     "axes.spines.right": False, "legend.frameon": False})
+plt.rcParams.update(
+    {
+        "font.size": 8,
+        "figure.figsize": (3.4, 2.2),
+        "savefig.bbox": "tight",
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "legend.frameon": False,
+    }
+)
 
 
 def save(fig, name):
@@ -47,8 +57,13 @@ def best_of(rows, family):
 
 
 def best_linear_f1(res):
-    f1s = [r["summary"]["f1"] for stage in ("models", "ablation") if stage in res
-           for r in res[stage]["rows"].values() if r["summary"]]
+    f1s = [
+        r["summary"]["f1"]
+        for stage in ("models", "ablation")
+        if stage in res
+        for r in res[stage]["rows"].values()
+        if r["summary"]
+    ]
     return max(f1s) if f1s else None
 
 
@@ -58,16 +73,24 @@ def fig_lambda(res):
     rows = res["models"]["rows"]
     fig, ax = plt.subplots()
     for family, marker in (("ridge", "s"), ("reg. logistic", "o")):
-        pts = sorted((r["lambda"], r["summary"]["f1"], r["summary"]["f1_std"])
-                     for r in rows.values() if r["family"] == family and r["summary"])
+        pts = sorted(
+            (r["lambda"], r["summary"]["f1"], r["summary"]["f1_std"])
+            for r in rows.values()
+            if r["family"] == family and r["summary"]
+        )
         if pts:
             lam, f1, std = zip(*pts)
             ax.errorbar(lam, f1, yerr=std, marker=marker, capsize=2, label=family)
     for name, style in (("least squares", ":"), ("logistic", "--")):
         r = rows.get(name)
         if r and r["summary"]:
-            ax.axhline(r["summary"]["f1"], ls=style, color="gray", lw=1,
-                       label=f"{name} (no $\\lambda$)")
+            ax.axhline(
+                r["summary"]["f1"],
+                ls=style,
+                color="gray",
+                lw=1,
+                label=f"{name} (no $\\lambda$)",
+            )
     ax.set_xscale("log")
     ax.set_xlabel("regularization $\\lambda$")
     ax.set_ylabel("CV F1 (best threshold)")
@@ -84,12 +107,18 @@ def fig_threshold(res, thresholds):
         for family in ("least squares", "ridge", "logistic", "reg. logistic"):
             b = best_of(rows, family)
             if b:
-                curves.append((b[0], np.nanmean(np.array(b[1]["f1"], dtype=float), axis=0)))
+                curves.append(
+                    (b[0], np.nanmean(np.array(b[1]["f1"], dtype=float), axis=0))
+                )
     if "boosting" in res:
         b = res["boosting"]
         c = b["checkpoints"].index(b["best_trees"])
-        curves.append((f"boosting ({b['best_trees']} trees)",
-                       np.array(b["f1"])[:, c].mean(axis=0)))
+        curves.append(
+            (
+                f"boosting ({b['best_trees']} trees)",
+                np.array(b["f1"])[:, c].mean(axis=0),
+            )
+        )
     if not curves:
         return
     fig, ax = plt.subplots()
@@ -106,8 +135,11 @@ def fig_threshold(res, thresholds):
 def fig_ablation(res):
     """CV F1 of reg. logistic for each preprocessing setting."""
     a = res["ablation"]
-    items = [(f"{n} ({r['n_features']} feat.)", r["summary"]["f1"], r["summary"]["f1_std"])
-             for n, r in a["rows"].items() if r["summary"]]
+    items = [
+        (f"{n} ({r['n_features']} feat.)", r["summary"]["f1"], r["summary"]["f1_std"])
+        for n, r in a["rows"].items()
+        if r["summary"]
+    ]
     if not items:
         return
     names, f1, std = zip(*items)
@@ -115,12 +147,20 @@ def fig_ablation(res):
     fig, ax = plt.subplots(figsize=(3.4, 0.28 * len(names) + 0.7))
     ax.errorbar(f1, pos, xerr=std, fmt="o", capsize=2)
     for p, v in zip(pos, f1):
-        ax.annotate(f"{v:.3f}", (v, p), xytext=(0, 5), textcoords="offset points",
-                    ha="center", fontsize=6)
+        ax.annotate(
+            f"{v:.3f}",
+            (v, p),
+            xytext=(0, 5),
+            textcoords="offset points",
+            ha="center",
+            fontsize=6,
+        )
     if "boosting" in res:
         v = res["boosting"]["summary"]["f1"]
         ax.axvline(v, ls="--", color="tab:red", lw=1)
-        ax.text(v, len(names) - 0.4, " boosting", color="tab:red", fontsize=6, va="bottom")
+        ax.text(
+            v, len(names) - 0.4, " boosting", color="tab:red", fontsize=6, va="bottom"
+        )
     ax.set_yticks(pos)
     ax.set_yticklabels(names)
     ax.set_ylim(-0.7, len(names) - 0.1)
@@ -135,12 +175,22 @@ def fig_gamma(res):
     finite = []
     for gamma, c in g["curves"].items():
         loss = np.array(c["loss"], dtype=float)
-        ax.plot(np.arange(1, len(loss) + 1), loss, lw=1.2,
-                label=f"$\\gamma$={gamma} (val. F1 {c['val_f1']:.3f})")
+        ax.plot(
+            np.arange(1, len(loss) + 1),
+            loss,
+            lw=1.2,
+            label=f"$\\gamma$={gamma} (val. F1 {c['val_f1']:.3f})",
+        )
         finite += list(loss[np.isfinite(loss)])
     ax.axvline(g["max_iters"], color="gray", ls=":", lw=1)
-    ax.text(g["max_iters"] * 1.02, np.log(2), f"{g['max_iters']} it. used", fontsize=6,
-            color="gray", va="top")
+    ax.text(
+        g["max_iters"] * 1.02,
+        np.log(2),
+        f"{g['max_iters']} it. used",
+        fontsize=6,
+        color="gray",
+        va="top",
+    )
     if finite:  # diverging step sizes would otherwise squash the plot
         ax.set_ylim(min(finite) - 0.01, np.log(2) + 0.03)
     ax.set_xlabel("iteration")
@@ -182,7 +232,9 @@ def fig_time(res):
             if t:
                 items.append((family, float(np.mean(t))))
     if "boosting" in res:
-        items.append(("boosting (incl. binning)", float(np.mean(res["boosting"]["time"]))))
+        items.append(
+            ("boosting (incl. binning)", float(np.mean(res["boosting"]["time"])))
+        )
     if not items:
         return
     names, secs = zip(*items)
@@ -202,8 +254,12 @@ def fig_time(res):
 # ---------------------------------------------------------------- table
 def write_table(res):
     """Main results table as LaTeX, one row per method (best lambda only)."""
-    lines = [r"\begin{tabular}{lcccc}", r"\hline",
-             r"Model & CV F1 & Acc. & Thr. & Time/fold \\", r"\hline"]
+    lines = [
+        r"\begin{tabular}{lcccc}",
+        r"\hline",
+        r"Model & CV F1 & Acc. & Thr. & Time/fold \\",
+        r"\hline",
+    ]
 
     def row(label, r=None, s=None, seconds=None):
         s = s or (r["summary"] if r else None)
@@ -212,8 +268,10 @@ def write_table(res):
         if seconds is None and r is not None:
             seconds = np.nanmean(r["time"])
         t = fmt_time(seconds) if seconds is not None else "--"
-        lines.append(f"{label} & {s['f1']:.3f} $\\pm$ {s['f1_std']:.3f} & {s['acc']:.3f} "
-                     f"& {s['threshold']:.2f} & {t} \\\\")
+        lines.append(
+            f"{label} & {s['f1']:.3f} $\\pm$ {s['f1_std']:.3f} & {s['acc']:.3f} "
+            f"& {s['threshold']:.2f} & {t} \\\\"
+        )
 
     rate = res["info"]["positive_rate"]
     lines.append(f"Always ``no'' & 0 & {1 - rate:.3f} & -- & -- \\\\")
@@ -235,8 +293,11 @@ def write_table(res):
     if "boosting" in res:
         lines.append(r"\hline")
         b = res["boosting"]
-        row(f"Boosted trees, {b['best_trees']} trees", s=b["summary"],
-            seconds=float(np.mean(b["time"])))
+        row(
+            f"Boosted trees, {b['best_trees']} trees",
+            s=b["summary"],
+            seconds=float(np.mean(b["time"])),
+        )
     lines += [r"\hline", r"\end{tabular}"]
     path = os.path.join(OUT, "table.tex")
     with open(path, "w") as f:
@@ -251,7 +312,9 @@ if __name__ == "__main__":
         res = json.load(f)
     os.makedirs(OUT, exist_ok=True)
     thresholds = np.array(res["info"]["thresholds"])
-    print(f"{RESULTS_FILE}: stages {[s for s in ('models', 'ablation', 'gamma', 'boosting') if s in res]}")
+    print(
+        f"{RESULTS_FILE}: stages {[s for s in ('models', 'ablation', 'gamma', 'boosting') if s in res]}"
+    )
     if "models" in res:
         fig_lambda(res)
     fig_threshold(res, thresholds)

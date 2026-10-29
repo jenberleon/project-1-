@@ -1,10 +1,23 @@
 import sys
 import numpy as np
-from implementations import (least_squares, ridge_regression,
-                             logistic_regression, reg_logistic_regression)
+from implementations import (
+    least_squares,
+    ridge_regression,
+    logistic_regression,
+    reg_logistic_regression,
+)
 from src.preprocessing import load_data, fit_preprocessing, transform
-from src.baseline import (SEED, K_FOLDS, PREPROCESSING_OPTIONS, GAMMA, MAX_ITERS, THRESHOLDS,
-                      sigmoid, f1_score, accuracy)
+from src.baseline import (
+    SEED,
+    K_FOLDS,
+    PREPROCESSING_OPTIONS,
+    GAMMA,
+    MAX_ITERS,
+    THRESHOLDS,
+    sigmoid,
+    f1_score,
+    accuracy,
+)
 
 LAMBDAS = [1e-5, 1e-4, 1e-3, 1e-2]
 
@@ -15,14 +28,19 @@ MODELS = {
     "least squares": lambda y, tx: (least_squares(y, tx)[0], False),
 }
 for lam in LAMBDAS:
-    MODELS[f"ridge lambda={lam:g}"] = (
-        lambda y, tx, lam=lam: (ridge_regression(y, tx, lam)[0], False))
+    MODELS[f"ridge lambda={lam:g}"] = lambda y, tx, lam=lam: (
+        ridge_regression(y, tx, lam)[0],
+        False,
+    )
 MODELS["logistic (no reg.)"] = lambda y, tx: (
-    logistic_regression(y, tx, np.zeros(tx.shape[1]), MAX_ITERS, GAMMA)[0], True)
+    logistic_regression(y, tx, np.zeros(tx.shape[1]), MAX_ITERS, GAMMA)[0],
+    True,
+)
 for lam in LAMBDAS:
-    MODELS[f"reg. logistic lambda={lam:g}"] = (
-        lambda y, tx, lam=lam: (reg_logistic_regression(
-            y, tx, lam, np.zeros(tx.shape[1]), MAX_ITERS, GAMMA)[0], True))
+    MODELS[f"reg. logistic lambda={lam:g}"] = lambda y, tx, lam=lam: (
+        reg_logistic_regression(y, tx, lam, np.zeros(tx.shape[1]), MAX_ITERS, GAMMA)[0],
+        True,
+    )
 
 
 def compare(x, y01):
@@ -68,8 +86,10 @@ def print_table(f1, acc, y01):
             continue
         b = np.nanargmax(mean_f1)
         f1_text = f"{mean_f1[b]:.4f} +/- {f1[name][:, b].std():.4f}"
-        print(f"{name:<30}{f1_text:>18}{acc[name][:, b].mean():>10.4f}"
-              f"{THRESHOLDS[b]:>11.2f}")
+        print(
+            f"{name:<30}{f1_text:>18}{acc[name][:, b].mean():>10.4f}"
+            f"{THRESHOLDS[b]:>11.2f}"
+        )
 
 
 if __name__ == "__main__":

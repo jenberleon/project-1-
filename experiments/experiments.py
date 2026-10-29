@@ -5,12 +5,12 @@ import time
 
 import numpy as np
 
-import boosting
-from baseline import (SEED, K_FOLDS, LAMBDA, GAMMA, MAX_ITERS, THRESHOLDS,
+from src import boosting
+from src.baseline import (SEED, K_FOLDS, LAMBDA, GAMMA, MAX_ITERS, THRESHOLDS,
                       sigmoid, f1_score, accuracy)
 from implementations import (least_squares, ridge_regression,
                              logistic_regression, reg_logistic_regression)
-from preprocessing import load_data, fit_preprocessing, transform
+from src.preprocessing import load_data, fit_preprocessing, transform
 
 QUICK = "--quick" in sys.argv
 ALL_STAGES = ["models", "ablation", "gamma", "boosting"]

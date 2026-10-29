@@ -10,9 +10,9 @@ Usage (run from the main project folder, expects the CSVs in dataset/):
 '''
 import sys
 import numpy as np
-from helpers import create_csv_submission
+from src.helpers import create_csv_submission
 from implementations import reg_logistic_regression
-from preprocessing import load_data, fit_preprocessing, transform
+from src.preprocessing import load_data, fit_preprocessing, transform
 
 SEED = 42
 K_FOLDS = 5
@@ -98,5 +98,5 @@ if __name__ == "__main__":
     else:
         params, w = train(x_train, y01)
         y_pred = np.where(predict_proba(x_test, params, w) >= threshold, 1, -1)
-        create_csv_submission(test_ids, y_pred, "submission.csv")
-        print("Wrote submission.csv")
+        create_csv_submission(test_ids, y_pred, "submissions/submission.csv")
+        print("Wrote submissions/submission.csv")

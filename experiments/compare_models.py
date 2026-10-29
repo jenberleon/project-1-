@@ -2,8 +2,8 @@ import sys
 import numpy as np
 from implementations import (least_squares, ridge_regression,
                              logistic_regression, reg_logistic_regression)
-from preprocessing import load_data, fit_preprocessing, transform
-from baseline import (SEED, K_FOLDS, PREPROCESSING_OPTIONS, GAMMA, MAX_ITERS, THRESHOLDS,
+from src.preprocessing import load_data, fit_preprocessing, transform
+from src.baseline import (SEED, K_FOLDS, PREPROCESSING_OPTIONS, GAMMA, MAX_ITERS, THRESHOLDS,
                       sigmoid, f1_score, accuracy)
 
 LAMBDAS = [1e-5, 1e-4, 1e-3, 1e-2]

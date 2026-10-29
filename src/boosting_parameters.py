@@ -1,14 +1,14 @@
 """
 Usage:
-  python boosting_parameters.py                 # 20 trials on 100,000 rows, 3 folds
+  python -m src.boosting_parameters                 # 20 trials on 100,000 rows, 3 folds
   python tune.py 10 100000       # 10 trials on 100,000 rows
 """
 import sys
 import json
 import time
 import numpy as np
-import boosting
-from preprocessing import load_data
+from src import boosting
+from src.preprocessing import load_data
 
 N_TRIALS = int(sys.argv[1]) if len(sys.argv) > 1 else 20
 N_ROWS = int(sys.argv[2]) if len(sys.argv) > 2 else 100_000
@@ -58,7 +58,7 @@ if __name__ == "__main__":
                         "f1": float(f1), "f1_std": float(f1_std), "accuracy": float(acc),
                         "hit_tree_limit": bool(n_trees == boosting.N_TREES),
                         "seconds": round(time.time() - start)})
-        with open("tuning_results.json", "w") as f:
+        with open("results/tuning_results.json", "w") as f:
             json.dump(results, f, indent=2)
 
     results.sort(key=lambda r: -r["f1"])

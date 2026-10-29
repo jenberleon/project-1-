@@ -1,22 +1,22 @@
 """
 Usage:
-  python boosting.py          # CV, then trains on all data, writes submission_boosting.csv
-  python boosting.py --quick  # first 50,000 rows only, no submission
+  python -m src.boosting          # CV, then trains on all data, writes submission_boosting.csv
+  python -m src.boosting --quick  # first 50,000 rows only, no submission
 """
 import sys
 import numpy as np
-from helpers import create_csv_submission
-from preprocessing import load_data, find_code_cols, replace_missing_codes
-from baseline import SEED, K_FOLDS, THRESHOLDS, sigmoid, f1_score, accuracy
+from src.helpers import create_csv_submission
+from src.preprocessing import load_data, find_code_cols, replace_missing_codes
+from src.baseline import SEED, K_FOLDS, THRESHOLDS, sigmoid, f1_score, accuracy
 
 N_BINS = 32            # bins per feature, bin 0 = missing
 N_TREES = 250          # maximum number of trees
 CHECK_EVERY = 50       # evaluate on the validation fold every 50 trees
 MAX_DEPTH = 5          # depth of each tree
 LEARNING_RATE = 0.1    # shrinks each tree's correction (smaller = more careful)
-REG_LAMBDA = 1.0       # L2 penalty on leaf values
-MIN_CHILD_HESS = 10.0  # minimum Hessian sum per leaf (roughly a minimum leaf size)
-ROW_SUBSAMPLE = 0.5    # fraction of rows used to build each tree
+REG_LAMBDA = 0.1       # L2 penalty on leaf values
+MIN_CHILD_HESS = 2.0   # minimum Hessian sum per leaf (roughly a minimum leaf size)
+ROW_SUBSAMPLE = 0.9    # fraction of rows used to build each tree
 COL_SUBSAMPLE = 0.5    # fraction of features considered by each tree
 QUICK = "--quick" in sys.argv
 
@@ -229,5 +229,5 @@ if __name__ == "__main__":
         xb_train, xb_test = prepare(x_train, [x_test])
         base, trees, _ = fit_boosting(xb_train, y01, n_trees)
         y_pred = np.where(predict_proba(base, trees, xb_test) >= threshold, 1, -1)
-        create_csv_submission(test_ids, y_pred, "submission_boosting.csv")
-        print("Wrote submission_boosting.csv")
+        create_csv_submission(test_ids, y_pred, "submissions/submission_boosting.csv")
+        print("Wrote submissions/submission_boosting.csv")

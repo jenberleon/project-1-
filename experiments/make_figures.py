@@ -1,8 +1,8 @@
 """Make the report figures and the LaTeX results table from experiments.py.
 
 Usage:
-  python make_figures.py           # reads results/results.json, writes into results/
-  python make_figures.py --quick   # reads results/results_quick.json, writes into results/quick/
+  python -m experiments.make_figures           # reads results/results.json, writes into results/
+  python -m experiments.make_figures --quick   # reads results/results_quick.json, writes into results/quick/
 Only the figures whose stages have been run are made. Figures are sized for one
 column of the two-column LaTeX template: \\includegraphics[width=\\columnwidth]{...}
 """

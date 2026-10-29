@@ -1,0 +1,18 @@
+\begin{tabular}{lcccc}
+\hline
+Model & CV F1 & Acc. & Thr. & Time/fold \\
+\hline
+Always ``no'' & 0 & 0.912 & -- & -- \\
+Least squares & 0.359 $\pm$ 0.103 & 0.787 & 0.21 & 14.3 s \\
+Ridge, $\lambda=10^{-5}$ & 0.419 $\pm$ 0.003 & 0.861 & 0.21 & 13.5 s \\
+Logistic, $\gamma=0.5$ & 0.425 $\pm$ 0.001 & 0.872 & 0.20 & 20.4 s \\
+Reg. logistic, $\lambda=10^{-4}$ & 0.425 $\pm$ 0.002 & 0.871 & 0.20 & 19.0 s \\
+\hline
+\quad Reg. logistic + none codes & 0.425 $\pm$ 0.001 & 0.866 & 0.19 & 11.6 s \\
+\quad Reg. logistic + missing indicators & 0.425 $\pm$ 0.003 & 0.871 & 0.20 & 17.9 s \\
+\quad Reg. logistic + one-hot & 0.428 $\pm$ 0.001 & 0.876 & 0.21 & 18.7 s \\
+\quad Reg. logistic all three & 0.428 $\pm$ 0.002 & 0.871 & 0.20 & 26.0 s \\
+\hline
+Boosted trees, 200 trees & 0.443 $\pm$ 0.001 & 0.872 & 0.20 & 7.7 min \\
+\hline
+\end{tabular}

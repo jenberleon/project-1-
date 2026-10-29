@@ -1,0 +1,12 @@
+\begin{tabular}{lccc}
+\toprule
+Model / preprocessing & CV F1 & Accuracy & Threshold \\
+\midrule
+Always predict ``no'' & 0 & 0.912 & -- \\
+LR: codes$\to$NaN, median, std. & 0.425 $\pm$ 0.002 & 0.871 & 0.20 \\
+LR: + `none' codes $\to$ 0 & 0.425 $\pm$ 0.001 & 0.866 & 0.19 \\
+LR: + one-hot & 0.428 $\pm$ 0.001 & 0.876 & 0.21 \\
+LR: + missing indicators & 0.428 $\pm$ 0.002 & 0.871 & 0.20 \\
+Boosting, 200 trees & 0.443 $\pm$ 0.001 & 0.872 & 0.20 \\
+\bottomrule
+\end{tabular}
